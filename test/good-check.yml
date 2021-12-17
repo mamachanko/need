@@ -8,7 +8,7 @@ dependencies:
 - name: yq
   help: https://github.com/mikefarah/yq
   testCmd: |
-    echo {} yq eval . -
+    echo {} | yq eval . -
     yq --version | grep '4.16.\d\+'
 - name: shfmt
   help: https://github.com/mvdan/sh

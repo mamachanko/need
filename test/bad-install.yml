@@ -1,0 +1,7 @@
+---
+apiVersion: dev.mamachanko.com/v1alpha1
+kind: DevDependencies
+dependencies:
+- name: Failing installation
+  installCmd: froobnoz
+  testCmd: true
