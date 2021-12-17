@@ -1,0 +1,13 @@
+---
+apiVersion: dev.mamachanko.com/v1alpha1
+kind: DevDependencies
+dependencies:
+- name: Never
+  help: not helpful
+  test: froobnoz
+- name: Safe against pipefails
+  help: This Should not
+  test: |
+      if foo | grep bar; then
+        false
+      fi
