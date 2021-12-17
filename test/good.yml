@@ -4,15 +4,15 @@ kind: DevDependencies
 dependencies:
 - name: Bash
   help:
-  test: bash --version | grep '5.\d\+.\d\+'
+  testCmd: bash --version | grep '5.\d\+.\d\+'
 - name: yq
   help: https://github.com/mikefarah/yq
-  test: |
+  testCmd: |
     echo {} yq eval . -
     yq --version | grep '4.16.\d\+'
 - name: shfmt
   help: https://github.com/mvdan/sh
-  test: shfmt --version | grep '3.3.\d\+'
+  testCmd: shfmt --version | grep '3.3.\d\+'
 - name: Always
   help: not needed
-  test: true
+  testCmd: true

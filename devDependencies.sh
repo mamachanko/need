@@ -33,25 +33,25 @@ status:
 EOF
 
   for check in "${DEV_DEPENDENCY_CHECKS[@]}"; do
-    dep_name="$(echo "$check" | jq -r .name)"
-    dep_help="$(echo "$check" | jq -r .help)"
-    dep_test="$(echo "$check" | jq -r .test)"
+    name="$(echo "$check" | jq -r .name)"
+    help="$(echo "$check" | jq -r .help)"
+    testCmd="$(echo "$check" | jq -r .testCmd)"
 
-    if output="$(bash -euo pipefail -c "$dep_test" 2>&1)"; then
+    if output="$(bash -euo pipefail -c "$testCmd" 2>&1)"; then
       cat <<EOF
-  - name: $dep_name
+  - name: $name
     status: ✅
 EOF
     else
       cat <<EOF
-  - name: $dep_name
-    test: |
-$(echo "$dep_test" | sed 's/^/      /g')
+  - name: $name
+    testCmd: |
+$(echo "$testCmd" | sed 's/^/      /g')
     output: |
 $(echo "$output" | sed 's/^/      /g')
     status: ❌
     help: |
-      $dep_help
+      $help
 EOF
       EXIT_CODE=1
     fi

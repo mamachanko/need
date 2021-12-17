@@ -4,10 +4,10 @@ kind: DevDependencies
 dependencies:
 - name: Never
   help: not helpful
-  test: froobnoz
+  testCmd: froobnoz
 - name: Safe against pipefails
   help: This Should not
-  test: |
+  testCmd: |
       if foo | grep bar; then
         false
       fi
