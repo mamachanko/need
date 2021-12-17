@@ -1,0 +1,11 @@
+---
+apiVersion: need.mamachanko.com/v1alpha1
+kind: Needs
+metadata:
+  name: Lacking
+spec:
+  needs:
+    - name: Unfulfillable
+      assessCmd: froobnoz
+    - name: Missing file
+      assessCmd: stat missing

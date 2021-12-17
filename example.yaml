@@ -1,0 +1,62 @@
+---
+apiVersion: need.mamachanko.com/v1alpha1
+kind: Needs
+metadata:
+  name: Example Needs
+spec:
+  needs:
+    - name: Internet
+      assessCmd: ping -c 1 github.comz
+      help: |
+        # Hey, Internet! Check me out I am Markdown.
+        
+        Please, make sure you have a _working_ network connection.
+        
+        Look [here](https://en.wikipedia.org/wiki/Internet).
+        
+        Try this:
+        ```
+        ping -c 1 github.comz
+        ```
+    - name: Bash
+      fulfillCmd: brew install bash
+      assessCmd: bash --version | grep '5.\d\+.\d\+'
+      help: Install with brew or download from https://ftpmirror.gnu.org/bash/.
+    - name: yq
+      help: |
+        Please, make sure you've got a version newer than 4.10.x
+        https://github.com/mikefarah/yq
+      assessCmd: |
+        echo {} yq eval . -
+        yq --version |
+          grep -o '\d\+.\d\+.\d\+' |
+          awk -F '.' '$1==4 && $2>10 {ok=1}; END {exit !ok}'
+    - name: shfmt
+      help: https://github.com/mvdan/sh
+      assessCmd: shfmt --version | grep '3.3.\d\+'
+    - name: Love
+      help: you have it
+      assessCmd: true
+    - name: To be safe against pipefails
+      help: This should pass
+      assessCmd: |
+        if froobnoz | grep bar; then
+          false
+        fi
+    - name: Unfulfillable
+      assessCmd: froobnoz
+    - name: File contents
+      help: This file holds valueable content
+      fulfillCmd: |
+        echo hello > afile
+      assessCmd: |
+        grep hello afile
+        rm afile
+    - name: Locally resolvable address
+      help: Please, make sure that "needs.needs" can be resolved to your loopback address 127.0.0.1
+      assessCmd: |
+        cat /etc/hosts | grep needs.needs
+        # even better:
+        # host -s needs.needs | grep 'needs.needs has address 127.0.0.1'
+      fulfillCmd:
+        false

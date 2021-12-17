@@ -1,0 +1,23 @@
+---
+apiVersion: need.mamachanko.com/v1alpha1
+kind: Needs
+metadata:
+  name: Satisfiable
+spec:
+  needs:
+    - name: Love
+      help: you have it
+      assessCmd: true
+    - name: To be safe against pipefails
+      help: This should pass
+      assessCmd: |
+        if froobnoz | grep bar; then
+          false
+        fi
+    - name: File contents
+      help: This file holds valueable content
+      fulfillCmd: |
+        echo hello > afile
+      assessCmd: |
+        grep hello afile
+        rm afile
