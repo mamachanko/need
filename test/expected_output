@@ -1,0 +1,57 @@
+
+[3mLacking[0m
+
+[1mUnfulfillable[0m
+  Assessing ...
+  Unfulfilled
+    stdout> 
+    stderr> bash: line 1: froobnoz: command not found
+
+  Fulfilling ...
+  Done
+  Assessing again ...
+  Still unfulfilled
+    stdout> 
+    stderr> bash: line 1: froobnoz: command not found
+
+  Help: 
+    <Sorry, no help.>
+
+[1mMissing file[0m
+  Assessing ...
+  Unfulfilled
+    stdout> 
+    stderr> stat: missing: stat: No such file or directory
+
+  Fulfilling ...
+  Done
+  Assessing again ...
+  Still unfulfilled
+    stdout> 
+    stderr> stat: missing: stat: No such file or directory
+
+  Help: 
+    <Sorry, no help.>
+
+[3mSatisfiable[0m
+
+[1mLove[0m
+  Assessing ...
+  Fulfilled
+
+[1mTo be safe against pipefails[0m
+  Assessing ...
+  Fulfilled
+
+[1mFile contents[0m
+  Assessing ...
+  Unfulfilled
+    stdout> 
+    stderr> grep: afile: No such file or directory
+
+  Fulfilling ...
+  Done
+  Assessing again ...
+  Fulfilled
+
+Failed

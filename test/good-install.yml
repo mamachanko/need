@@ -1,7 +1,0 @@
----
-apiVersion: dev.mamachanko.com/v1alpha1
-kind: DevDependencies
-dependencies:
-- name: yq
-  installCmd: ./scripts/install-yq.sh
-  testCmd: ./bin/yq --version | grep '4.16.1'

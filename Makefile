@@ -4,18 +4,27 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
-.DEFAULT_GOAL := test
 
 .PHONY: test
-test: test-check test-install
+test:
+	# expected to succeed
+	go run main.go --file test/satisfiable.yaml
 
-.PHONY: test-check
-test-check:
-	DEV_DEPENDENCIES_CONFIG="./test/good-check.yml" ./devDependencies.sh
-	! { DEV_DEPENDENCIES_CONFIG="./test/bad-check.yml" ./devDependencies.sh; }
+	# expected to fail
+	! go run main.go --file test/lacking.yaml
 
-.PHONY: test-install
-test-install:
-	DEV_DEPENDENCIES_CONFIG="./test/good-install.yml" ./devDependencies.sh install
-	DEV_DEPENDENCIES_CONFIG="./test/good-install.yml" ./devDependencies.sh
-	! { DEV_DEPENDENCIES_CONFIG="./test/bad-install.yml" ./devDependencies.sh install; }
+	# test output
+	diff \
+	  <(go run main.go --file test/lacking.yaml --file test/satisfiable.yaml) \
+	  <(cat test/expected_output)
+
+	# test output when failing fast
+	diff \
+	  <(go run main.go --file test/lacking.yaml --file test/satisfiable.yaml --fail-fast) \
+	  <(cat test/expected_output_fail_fast)
+
+.PHONY: example
+example:
+	@go run main.go \
+	  --file example.yaml \
+	  --fail-fast i
