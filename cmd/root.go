@@ -67,7 +67,16 @@ var rootCmd = &cobra.Command{
 
 		for _, file := range options.Files {
 			var err error
-			fileContent, err := ioutil.ReadFile(file)
+			var fileContent []byte
+			switch {
+			case file == "-":
+				// Issue: This will only read from stdin once.
+				// If --file/-f - is given more than once only the first will actually be read.
+				// The subsequent reads will result in an empty fileContent.
+				fileContent, err = ioutil.ReadAll(os.Stdin)
+			default:
+				fileContent, err = ioutil.ReadFile(file)
+			}
 			if err != nil {
 				log.Fatalf("error: %v", err)
 				os.Exit(1)

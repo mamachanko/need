@@ -23,6 +23,13 @@ test:
 	  <(go run main.go --file test/lacking.yaml --file test/satisfiable.yaml --fail-fast) \
 	  <(cat test/expected_output_fail_fast)
 
+	# read from stdin
+	! cat test/lacking.yaml | go run main.go --file -
+	diff \
+	  <(go run main.go --file test/satisfiable.yaml) \
+	  <(cat test/satisfiable.yaml | go run main.go --file -)
+
+
 .PHONY: example
 example:
 	@go run main.go \
