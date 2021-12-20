@@ -8,9 +8,6 @@ import (
 	"os/exec"
 )
 
-var bold = lipgloss.NewStyle().Bold(true)
-var italic = lipgloss.NewStyle().Italic(true)
-
 // NeedsConfig holds the fields parsed from the Needs configuration file (needs.yaml).
 type NeedsConfig struct {
 	// APIVersion is the version of the configuration.
@@ -45,7 +42,7 @@ type Need struct {
 
 // Address first assesses, then fulfills if necessary and assesses again.
 func (n *Need) Address() (err error) {
-	fmt.Printf("\n%s\n", bold.Render(n.Name))
+	fmt.Printf("\n%s\n", lipgloss.NewStyle().Bold(true).Render(n.Name))
 	if n.Assess() == nil {
 		return
 	}

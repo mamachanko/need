@@ -11,9 +11,6 @@ import (
 	"os"
 )
 
-var bold = lipgloss.NewStyle().Bold(true)
-var italic = lipgloss.NewStyle().Italic(true)
-
 func NewNeedCmd() (cmd *cobra.Command) {
 	o := &NeedOptions{}
 	cmd = &cobra.Command{
@@ -57,7 +54,7 @@ func (o NeedOptions) Run() {
 			os.Exit(1)
 		}
 
-		fmt.Printf("\n%s\n", italic.Render(needsCfg.Metadata.Name))
+		fmt.Printf("\n%s\n", lipgloss.NewStyle().Italic(true).Render(needsCfg.Metadata.Name))
 
 		for _, need := range needsCfg.Spec.Needs {
 			if need.Address() != nil {
