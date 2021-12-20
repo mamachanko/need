@@ -33,6 +33,7 @@ func (o NeedOptions) Run() {
 	for _, file := range o.Files {
 		var err error
 		var fileContent []byte
+
 		switch {
 		case file == "-":
 			// Issue: This will only read from stdin once.
@@ -63,11 +64,11 @@ func (o NeedOptions) Run() {
 		}
 
 	}
+
 	if succeeded {
 		fmt.Println("\nSucceeded")
 	} else {
 		fmt.Println("\nFailed")
 		os.Exit(1)
 	}
-
 }

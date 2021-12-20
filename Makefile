@@ -4,27 +4,43 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
+GINKGO := go run github.com/onsi/ginkgo/ginkgo
+MAIN := go run cmd/main.go
 
 .PHONY: test
-test:
+test: unit-test integration-test
+
+.PHONY: unit-test
+unit-test:
+	$(GINKGO) \
+	  -r \
+	  --randomizeAllSpecs \
+	  --randomizeSuites \
+	  --failOnPending \
+	  --cover \
+	  --trace \
+	  --progress
+
+# TODO migrate to ginkgo
+.PHONY: integration-test
+integration-test:
 	# expected to succeed
-	go run main.go --file test/satisfiable.yaml
+	$(MAIN) --file test/satisfiable.yaml
 
 	# expected to fail
-	! go run main.go --file test/lacking.yaml
+	! $(MAIN) --file test/lacking.yaml
 
 	# test output
 	diff \
-	  <(go run main.go --file test/lacking.yaml --file test/satisfiable.yaml) \
+	  <($(MAIN) --file test/lacking.yaml --file test/satisfiable.yaml) \
 	  <(cat test/expected_output)
 
 	# read from stdin
-	! cat test/lacking.yaml | go run main.go --file -
+	! cat test/lacking.yaml | $(MAIN) --file -
 	diff \
-	  <(go run main.go --file test/satisfiable.yaml) \
-	  <(cat test/satisfiable.yaml | go run main.go --file -)
-
+	  <($(MAIN) --file test/satisfiable.yaml) \
+	  <(cat test/satisfiable.yaml | $(MAIN) --file -)
 
 .PHONY: example
 example:
-	@go run main.go --file example.yaml
+	@$(MAIN) --file example.yaml
