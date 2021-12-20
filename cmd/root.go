@@ -18,8 +18,7 @@ import (
 )
 
 type Options struct {
-	Files    []string
-	FailFast bool
+	Files []string
 }
 
 // NeedsConfig holds the fields parsed from the Needs configuration file (needs.yaml).
@@ -54,6 +53,124 @@ type Need struct {
 	Help       string
 }
 
+// Address first assesses, then fulfills if necessary and assesses again.
+func (n *Need) Address() (err error) {
+	fmt.Printf("\n%s\n", bold.Render(n.Name))
+	if n.Assess() == nil {
+		return
+	}
+	err = n.Fulfill()
+	if err != nil {
+		n.RenderHelp()
+		return
+	}
+	err = n.Assess()
+	if err != nil {
+		n.RenderHelp()
+	}
+	return
+}
+
+// Assess runs the AssessCmd and returns an error if it failed.
+func (n *Need) Assess() (err error) {
+	fmt.Println("  Assessing ...")
+	assessCmd := exec.Command("bash", "-euo", "pipefail", "-c", n.AssessCmd)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	assessCmd.Stdout = &stdout
+	assessCmd.Stderr = &stderr
+	err = assessCmd.Run()
+	if err == nil {
+		fmt.Println("  Fulfilled")
+	} else {
+		fmt.Println("  Unfulfilled")
+		fmt.Printf("    stdout> %s\n", stdout.String())
+		fmt.Printf("    stderr> %s\n", stderr.String())
+	}
+	return
+}
+
+// Fulfill runs the FulfillCmd and returns an error if it failed.
+func (n *Need) Fulfill() (err error) {
+	fmt.Println("  Fulfilling ...")
+	fulfillCmd := exec.Command("bash", "-euo", "pipefail", "-c", n.FulfillCmd)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	fulfillCmd.Stdout = &stdout
+	fulfillCmd.Stderr = &stderr
+	err = fulfillCmd.Run()
+	if err == nil {
+		fmt.Printf("  Done\n")
+	} else {
+		fmt.Println("  Failed")
+		fmt.Printf("    stdout> %s\n", stdout.String())
+		fmt.Printf("    stderr> %s\n", stderr.String())
+	}
+	return
+}
+
+// RenderHelp returns the terminal-friendly rendered Help markdown.
+func (n *Need) RenderHelp() (err error) {
+	var renderedHelp string
+	helpMarkdown := n.Help
+	if helpMarkdown == "" {
+		helpMarkdown = "_Sorry, no help._"
+	}
+	renderedHelp, err = glamour.Render(helpMarkdown, "dark")
+	if err != nil {
+		fmt.Print("Help: _<Failed to render help. Is it valid Markdown?>_")
+		return
+	}
+	fmt.Print("  Help:")
+	fmt.Print(renderedHelp)
+	return
+}
+
+// NeedCmd is the entrypoint. It addresses all needs in all given config files.
+func NeedCmd(cmd *cobra.Command, args []string) {
+	succeeded := true
+
+	for _, file := range options.Files {
+		var err error
+		var fileContent []byte
+		switch {
+		case file == "-":
+			// Issue: This will only read from stdin once.
+			// If --file/-f - is given more than once only the first will actually be read.
+			// The subsequent reads will result in an empty fileContent.
+			fileContent, err = ioutil.ReadAll(os.Stdin)
+		default:
+			fileContent, err = ioutil.ReadFile(file)
+		}
+		if err != nil {
+			log.Fatalf("error: %v", err)
+			os.Exit(1)
+		}
+
+		needsCfg := NeedsConfig{}
+		err = yaml.Unmarshal(fileContent, &needsCfg)
+		if err != nil {
+			log.Fatalf("error: %v", err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("\n%s\n", italic.Render(needsCfg.Metadata.Name))
+
+		for _, need := range needsCfg.Spec.Needs {
+			if need.Address() != nil {
+				succeeded = false
+			}
+		}
+
+	}
+	if succeeded {
+		fmt.Println("\nSucceeded")
+	} else {
+		fmt.Println("\nFailed")
+		os.Exit(1)
+	}
+}
+
 var options Options
 var bold = lipgloss.NewStyle().Bold(true)
 var italic = lipgloss.NewStyle().Italic(true)
@@ -62,117 +179,7 @@ var italic = lipgloss.NewStyle().Italic(true)
 var rootCmd = &cobra.Command{
 	Use:   "need",
 	Short: "Very simple need fulfillment and assessment",
-	Run: func(cmd *cobra.Command, args []string) {
-		succeeded := true
-
-		for _, file := range options.Files {
-			var err error
-			var fileContent []byte
-			switch {
-			case file == "-":
-				// Issue: This will only read from stdin once.
-				// If --file/-f - is given more than once only the first will actually be read.
-				// The subsequent reads will result in an empty fileContent.
-				fileContent, err = ioutil.ReadAll(os.Stdin)
-			default:
-				fileContent, err = ioutil.ReadFile(file)
-			}
-			if err != nil {
-				log.Fatalf("error: %v", err)
-				os.Exit(1)
-			}
-
-			needsCfg := NeedsConfig{}
-			err = yaml.Unmarshal(fileContent, &needsCfg)
-			if err != nil {
-				log.Fatalf("error: %v", err)
-				os.Exit(1)
-			}
-
-			fmt.Printf("\n%s\n", italic.Render(needsCfg.Metadata.Name))
-
-			for _, need := range needsCfg.Spec.Needs {
-				fmt.Printf("\n%s\n", bold.Render(need.Name))
-				fmt.Println("  Assessing ...")
-				assessBeforeCmd := exec.Command("bash", "-euo", "pipefail", "-c", need.AssessCmd)
-				var stdout bytes.Buffer
-				var stderr bytes.Buffer
-				assessBeforeCmd.Stdout = &stdout
-				assessBeforeCmd.Stderr = &stderr
-				err = assessBeforeCmd.Run()
-				if err == nil {
-					fmt.Println("  Fulfilled")
-				} else {
-					if options.FailFast {
-						if need.Help != "" {
-							fmt.Print("  Help:")
-							var renderedHelp string
-							renderedHelp, err = glamour.Render(need.Help, "dark")
-							fmt.Print(renderedHelp)
-						} else {
-							var renderedMissingHelp string
-							renderedMissingHelp, err = glamour.Render("_Sorry, no help._", "dark")
-							fmt.Print(renderedMissingHelp)
-						}
-						succeeded = false
-						os.Exit(1)
-					}
-
-					fmt.Println("  Unfulfilled")
-					fmt.Printf("    stdout> %s\n", stdout.String())
-					fmt.Printf("    stderr> %s\n", stderr.String())
-
-					fmt.Println("  Fulfilling ...")
-					fulfillCmd := exec.Command("bash", "-euo", "pipefail", "-c", need.FulfillCmd)
-					var fulfillStdout bytes.Buffer
-					var fulfillStderr bytes.Buffer
-					fulfillCmd.Stdout = &fulfillStdout
-					fulfillCmd.Stderr = &fulfillStderr
-					err = fulfillCmd.Run()
-					if err == nil {
-						fmt.Printf("  Done\n")
-					} else {
-						fmt.Println("  Failed")
-						fmt.Printf("    stdout> %s\n", fulfillStdout.String())
-						fmt.Printf("    stderr> %s\n", fulfillStderr.String())
-						succeeded = false
-						break
-					}
-					fmt.Println("  Assessing again ...")
-					assessAfterCmd := exec.Command("bash", "-euo", "pipefail", "-c", need.AssessCmd)
-					var assessAfterStdout bytes.Buffer
-					var assessAfterStderr bytes.Buffer
-					assessAfterCmd.Stdout = &assessAfterStdout
-					assessAfterCmd.Stderr = &assessAfterStderr
-					err = assessAfterCmd.Run()
-					if err == nil {
-						fmt.Printf("  Fulfilled\n")
-					} else {
-						fmt.Println("  Still unfulfilled")
-						fmt.Printf("    stdout> %s\n", assessAfterStdout.String())
-						fmt.Printf("    stderr> %s\n", assessAfterStderr.String())
-						if need.Help != "" {
-							fmt.Print("  Help:")
-							var out string
-							out, err = glamour.Render(need.Help, "dark")
-							fmt.Print(out)
-						} else {
-							fmt.Printf("  Help: \n    <Sorry, no help.>\n")
-						}
-
-						succeeded = false
-					}
-				}
-			}
-
-		}
-		if succeeded {
-			fmt.Println("\nSucceeded")
-		} else {
-			fmt.Println("\nFailed")
-			os.Exit(1)
-		}
-	},
+	Run:   NeedCmd,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -186,5 +193,4 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().StringArrayVarP(&options.Files, "file", "f", nil, "File (local path or -) (can be specified multiple times)")
-	rootCmd.Flags().BoolVarP(&options.FailFast, "fail-fast", "x", false, "Fail upon encountering an error")
 }

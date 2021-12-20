@@ -18,11 +18,6 @@ test:
 	  <(go run main.go --file test/lacking.yaml --file test/satisfiable.yaml) \
 	  <(cat test/expected_output)
 
-	# test output when failing fast
-	diff \
-	  <(go run main.go --file test/lacking.yaml --file test/satisfiable.yaml --fail-fast) \
-	  <(cat test/expected_output_fail_fast)
-
 	# read from stdin
 	! cat test/lacking.yaml | go run main.go --file -
 	diff \
@@ -32,6 +27,4 @@ test:
 
 .PHONY: example
 example:
-	@go run main.go \
-	  --file example.yaml \
-	  --fail-fast i
+	@go run main.go --file example.yaml
