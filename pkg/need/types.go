@@ -1,25 +1,15 @@
-/*
-Copyright © 2021 Max Brauer <mamachanko>
-
-*/
-package cmd
+package need
 
 import (
 	"bytes"
 	"fmt"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"log"
-	"os"
 	"os/exec"
 )
 
-type Options struct {
-	Files []string
-}
+var bold = lipgloss.NewStyle().Bold(true)
+var italic = lipgloss.NewStyle().Italic(true)
 
 // NeedsConfig holds the fields parsed from the Needs configuration file (needs.yaml).
 type NeedsConfig struct {
@@ -124,73 +114,4 @@ func (n *Need) RenderHelp() (err error) {
 	fmt.Print("  Help:")
 	fmt.Print(renderedHelp)
 	return
-}
-
-// NeedCmd is the entrypoint. It addresses all needs in all given config files.
-func NeedCmd(cmd *cobra.Command, args []string) {
-	succeeded := true
-
-	for _, file := range options.Files {
-		var err error
-		var fileContent []byte
-		switch {
-		case file == "-":
-			// Issue: This will only read from stdin once.
-			// If --file/-f - is given more than once only the first will actually be read.
-			// The subsequent reads will result in an empty fileContent.
-			fileContent, err = ioutil.ReadAll(os.Stdin)
-		default:
-			fileContent, err = ioutil.ReadFile(file)
-		}
-		if err != nil {
-			log.Fatalf("error: %v", err)
-			os.Exit(1)
-		}
-
-		needsCfg := NeedsConfig{}
-		err = yaml.Unmarshal(fileContent, &needsCfg)
-		if err != nil {
-			log.Fatalf("error: %v", err)
-			os.Exit(1)
-		}
-
-		fmt.Printf("\n%s\n", italic.Render(needsCfg.Metadata.Name))
-
-		for _, need := range needsCfg.Spec.Needs {
-			if need.Address() != nil {
-				succeeded = false
-			}
-		}
-
-	}
-	if succeeded {
-		fmt.Println("\nSucceeded")
-	} else {
-		fmt.Println("\nFailed")
-		os.Exit(1)
-	}
-}
-
-var options Options
-var bold = lipgloss.NewStyle().Bold(true)
-var italic = lipgloss.NewStyle().Italic(true)
-
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "need",
-	Short: "Very simple need fulfillment and assessment",
-	Run:   NeedCmd,
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
-func init() {
-	rootCmd.Flags().StringArrayVarP(&options.Files, "file", "f", nil, "File (local path or -) (can be specified multiple times)")
 }

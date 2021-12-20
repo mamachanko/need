@@ -1,4 +1,4 @@
-module need
+module github.com/mamachanko/need
 
 go 1.17
 

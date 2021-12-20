@@ -4,8 +4,16 @@ Copyright © 2021 Max Brauer <mamachanko>
 */
 package main
 
-import "need/cmd"
+import (
+	"github.com/mamachanko/need/pkg/cmd"
+	"os"
+)
 
 func main() {
-	cmd.Execute()
+	command := cmd.NewNeedCmd()
+
+	err := command.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
 }
